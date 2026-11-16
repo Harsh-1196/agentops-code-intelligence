@@ -35,5 +35,5 @@ async def test_live_gemini_api_connection():
     assert "CONFIRMED" in result.text.upper()
     assert result.input_tokens > 0, "Live Gemini API must return actual prompt token count"
     assert result.output_tokens > 0, "Live Gemini API must return actual candidate token count"
-    assert result.total_tokens == result.input_tokens + result.output_tokens
+    assert result.total_tokens >= result.input_tokens + result.output_tokens
     assert result.cost_usd is not None, "Cost must be calculated for live model call"

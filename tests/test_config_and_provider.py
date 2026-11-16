@@ -7,7 +7,7 @@ from agentops.providers.gemini_provider import GeminiProvider, GenerationResult
 
 def test_settings_defaults():
     """Verify default configuration settings."""
-    settings = Settings()
+    settings = Settings(_env_file=None)
     assert settings.gemini_model == "gemini-2.5-flash"
     assert settings.max_agent_iterations == 3
     assert settings.allow_mock_fallback is True
@@ -33,7 +33,7 @@ def test_pricing_and_cost_calculation():
 @pytest.mark.asyncio
 async def test_mock_provider_generation():
     """Verify deterministic mock provider generates valid results with tokens and cost."""
-    settings = Settings(allow_mock_fallback=True)
+    settings = Settings(gemini_api_key=None, allow_mock_fallback=True, _env_file=None)
     provider = GeminiProvider(settings=settings)
 
     # Test researcher role

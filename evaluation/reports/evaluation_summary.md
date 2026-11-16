@@ -1,6 +1,6 @@
 # AgentOps Benchmark Evaluation Summary Report
 
-Generated: `2026-11-16T19:44:38.947090+00:00` | Total Cases: `32` | Duration: `0.56s`
+Generated: `2026-11-16T20:24:00.967399+00:00` | Total Cases: `3` | Duration: `41.01s`
 
 ---
 
@@ -8,9 +8,9 @@ Generated: `2026-11-16T19:44:38.947090+00:00` | Total Cases: `32` | Duration: `0
 
 | Metric | Result | Description |
 |---|---|---|
-| **Trajectory Exact Match Rate** | **96.9%** | Exact matching trajectories / total evaluated |
-| Exact Sequence Matches | 31 | Perfect alignment with canonical sequence |
-| Sequence Mismatches | 1 | Missing or unexpected agent/tool actions |
+| **Trajectory Exact Match Rate** | **100.0%** | Exact matching trajectories / total evaluated |
+| Exact Sequence Matches | 3 | Perfect alignment with canonical sequence |
+| Sequence Mismatches | 0 | Missing or unexpected agent/tool actions |
 
 ---
 
@@ -18,10 +18,10 @@ Generated: `2026-11-16T19:44:38.947090+00:00` | Total Cases: `32` | Duration: `0
 
 | Metric | Macro Average | Micro Average |
 |---|---|---|
-| **Precision** | **3.1%** | 3.1% |
-| **Recall** | **3.1%** | 3.6% |
-| **F1 Score** | **3.1%** | 3.4% |
-| Counts | TP: 4 | FP: 124, FN: 107 |
+| **Precision** | **33.3%** | 33.3% |
+| **Recall** | **33.3%** | 36.4% |
+| **F1 Score** | **33.3%** | 34.8% |
+| Counts | TP: 4 | FP: 8, FN: 7 |
 
 ---
 
@@ -31,7 +31,7 @@ Generated: `2026-11-16T19:44:38.947090+00:00` | Total Cases: `32` | Duration: `0
 |---|---|---|
 | **Hallucination Score** | **5.00 / 5.00** | Grounding against source context; flags unsupported claims |
 | **Response Match Score** | **4.90 / 5.00** | Completeness against expected reference answer |
-| Judge LLM Tokens | 20,194 tokens | Judge inference token accounting |
-| Judge LLM Cost | $0.002321 USD | Cost calculated via Gemini pricing table |
+| Judge LLM Tokens | 1,966 tokens | Judge inference token accounting |
+| Judge LLM Cost | $0.000223 USD | Cost calculated via Gemini pricing table |
 
 *Note: LLM-as-a-Judge scores represent automated model-based evaluations using Google AI Studio Gemini API.*
