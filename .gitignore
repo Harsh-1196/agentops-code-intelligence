@@ -47,10 +47,6 @@ htmlcov/
 *.db
 agentops.db
 evaluation_results/
-evaluation/reports/*.csv
-evaluation/reports/*.json
-evaluation/reports/*.md
-!evaluation/reports/.gitkeep
 
 # Node / React
 node_modules/

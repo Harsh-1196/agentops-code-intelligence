@@ -1,0 +1,36 @@
+{
+  "benchmark_run_at": "2026-11-16T19:44:38.947090+00:00",
+  "total_evaluated_cases": 32,
+  "dataset_categories": [
+    "factual_research",
+    "repository_investigation",
+    "technical_explanation",
+    "source_grounded_summarization",
+    "information_retrieval",
+    "multi_step_reasoning",
+    "misleading_or_insufficient_evidence"
+  ],
+  "elapsed_seconds": 0.56,
+  "trajectory_exact_match": {
+    "rate": 0.9688,
+    "exact_matches": 31,
+    "mismatches": 1
+  },
+  "classification_metrics": {
+    "macro_precision": 0.0312,
+    "macro_recall": 0.0312,
+    "macro_f1": 0.0312,
+    "micro_precision": 0.0312,
+    "micro_recall": 0.036,
+    "micro_f1": 0.0335,
+    "total_tp": 4,
+    "total_fp": 124,
+    "total_fn": 107
+  },
+  "llm_as_a_judge": {
+    "average_hallucination_score": 5.0,
+    "average_response_match_score": 4.9,
+    "total_judge_tokens": 20194,
+    "total_judge_cost_usd": 0.002321
+  }
+}
