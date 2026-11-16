@@ -262,13 +262,3 @@ docker-compose up --build
 | `GET` | `/api/metrics` | System-wide P50/P95 latencies, total tokens, and costs |
 
 ---
-
-## 8. Attribution & Independent Implementation Notice
-
-- **Architectural Reference**: Inspired by [`vladkol/agent-evaluation-lab`](https://github.com/vladkol/agent-evaluation-lab) (Apache-2.0 License).
-- **Independently Developed Components**:
-  1. Complete removal of Vertex AI Evaluation Service, replaced with an independent, pure-Python evaluation harness.
-  2. Google AI Studio Developer API integration using standard API keys (`GEMINI_API_KEY`) without GCP service accounts.
-  3. Trajectory exact-match evaluator with canonical sequence normalization and diff reporting.
-  4. Local OpenTelemetry and Jaeger all-in-one tracing with token, latency, and cost attribution.
-  5. Modern React + TypeScript dashboard with interactive telemetry visualizations.
