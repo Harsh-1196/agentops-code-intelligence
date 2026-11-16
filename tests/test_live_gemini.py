@@ -14,9 +14,10 @@ from agentops.providers.gemini_provider import GeminiProvider, GenerationResult
 @pytest.mark.asyncio
 async def test_live_gemini_api_connection():
     """Verify live Gemini Developer API generation and real token usage metadata."""
-    api_key = os.environ.get("GEMINI_API_KEY")
+    settings = Settings()
+    api_key = os.environ.get("GEMINI_API_KEY") or settings.gemini_api_key
     if not api_key or not api_key.strip():
-        pytest.skip("Skipping live Gemini test: GEMINI_API_KEY is not set in environment.")
+        pytest.skip("Skipping live Gemini test: GEMINI_API_KEY is not set in environment or .env.")
 
     settings = Settings(gemini_api_key=api_key, allow_mock_fallback=False)
     provider = GeminiProvider(settings=settings)

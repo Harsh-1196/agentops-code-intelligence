@@ -22,6 +22,16 @@ DEFAULT_MODEL_PRICING: Dict[str, ModelPricing] = {
         output_price_per_1m=0.30,
         currency="USD"
     ),
+    "gemini-3.5-flash": ModelPricing(
+        input_price_per_1m=0.075,
+        output_price_per_1m=0.30,
+        currency="USD"
+    ),
+    "gemini-3-flash-preview": ModelPricing(
+        input_price_per_1m=0.075,
+        output_price_per_1m=0.30,
+        currency="USD"
+    ),
     "gemini-2.0-flash": ModelPricing(
         input_price_per_1m=0.10,
         output_price_per_1m=0.40,
