@@ -1,0 +1,974 @@
+{
+  "metadata": {
+    "benchmark_name": "AgentOps-Evaluation-Golden-Benchmark",
+    "version": "1.0.0",
+    "dataset_type": "Synthetic & Curated Ground-Truth Evaluation Benchmark",
+    "disclaimer": "This dataset contains curated and synthetic ground-truth cases designed to benchmark Google ADK multi-agent systems and independent evaluators. It is not an external standardized industry benchmark.",
+    "total_cases": 32,
+    "categories": [
+      "factual_research",
+      "repository_investigation",
+      "technical_explanation",
+      "source_grounded_summarization",
+      "information_retrieval",
+      "multi_step_reasoning",
+      "misleading_or_insufficient_evidence"
+    ]
+  },
+  "cases": [
+    {
+      "id": "CASE-001",
+      "category": "repository_investigation",
+      "task": "Investigate project configuration, dependencies, and python version requirements in pyproject.toml.",
+      "reference_context": "pyproject.toml defines project name 'agentops-code-intelligence', python requirement '>=3.10', and dependencies including 'google-adk>=2.14.0', 'google-genai>=2.30.0', 'fastapi>=0.115.0', and 'opentelemetry-api>=1.26.0'.",
+      "expected_response": "The project 'agentops-code-intelligence' requires Python >=3.10 and relies on google-adk, google-genai, fastapi, and opentelemetry.",
+      "expected_facts": [
+        "Project name is agentops-code-intelligence",
+        "Python requirement is >=3.10",
+        "Uses google-adk as agent framework",
+        "Uses google-genai for Gemini Developer API access"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["inspect_repository_structure", "read_source_file"],
+      "expected_evidence_references": ["pyproject.toml#L1-L25"],
+      "hallucination_sensitive_facts": ["Does not require Vertex AI SDK", "Python minimum is 3.10, not 3.12"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-002",
+      "category": "factual_research",
+      "task": "Explain the difference between Google AI Studio Gemini API and Google Cloud Vertex AI Gemini API.",
+      "reference_context": "Google AI Studio uses simple API keys (GEMINI_API_KEY) with direct endpoints without GCP IAM service accounts or cloud billing setups. Vertex AI requires GCP project IDs, IAM OAuth credentials, and Google Cloud billing accounts.",
+      "expected_response": "Google AI Studio uses developer API keys directly without Google Cloud IAM or billing setup, whereas Vertex AI requires GCP credentials, project ID, and Google Cloud service accounts.",
+      "expected_facts": [
+        "AI Studio uses API key authentication",
+        "Vertex AI requires GCP project and IAM credentials",
+        "AI Studio operates without Vertex AI billing dependencies"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["retrieve_web_documentation"],
+      "expected_evidence_references": ["docs/architecture.md"],
+      "hallucination_sensitive_facts": ["AI Studio does not require service account JSON keys"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-003",
+      "category": "technical_explanation",
+      "task": "Describe the multi-agent loop orchestration mechanism and its bounded termination condition.",
+      "reference_context": "The Orchestrator executes a bounded loop over Researcher, Writer, and Judge. It breaks early with 'orchestrator.approve' when the Judge returns 'pass', and forces termination with 'orchestrator.max_iterations' when reaching max_iterations (default 3) to prevent infinite loops.",
+      "expected_response": "The multi-agent loop coordinates Researcher, Writer, and Judge agents, terminating early when the Judge passes or forcefully terminating when reaching the maximum iteration bound (3) to avoid infinite execution.",
+      "expected_facts": [
+        "Loop bounds execution to max_iterations limit (default 3)",
+        "Judge feedback status 'pass' triggers early loop escalation",
+        "Rejection triggers revision cycle passing instructions back to agents",
+        "Infinite loops are strictly prevented"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/orchestrator.py#L30-L100"],
+      "hallucination_sensitive_facts": ["Max iteration bound is enforced by code, not prompt"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-004",
+      "category": "source_grounded_summarization",
+      "task": "Summarize the OpenTelemetry span hierarchy and telemetry attributes recorded during workflow runs.",
+      "reference_context": "OpenTelemetry spans form a hierarchy from request root to orchestrator, researcher tools, writer generation, judge evaluation, and final response. Attributes track model IDs, tokens, latencies, and calculated USD costs.",
+      "expected_response": "OpenTelemetry creates hierarchical spans starting from incoming requests down through individual agent and tool executions, attaching token counts, latency, and cost attributes.",
+      "expected_facts": [
+        "Hierarchical spans track request, orchestrator, researcher, writer, and judge",
+        "Captures input tokens, output tokens, and total tokens",
+        "Calculates cost per request based on verified model pricing",
+        "Traces export to local Jaeger instance"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file", "retrieve_web_documentation"],
+      "expected_evidence_references": ["docs/architecture.md#L45-L75"],
+      "hallucination_sensitive_facts": ["Export endpoint is local Jaeger OTLP, not proprietary SaaS"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-005",
+      "category": "information_retrieval",
+      "task": "Retrieve the exact pricing formula for Gemini models used for cost-per-request accounting.",
+      "reference_context": "Cost formula: (input_tokens * input_price + output_tokens * output_price) / 1,000,000. For gemini-2.5-flash, input is $0.075/1M and output is $0.30/1M tokens.",
+      "expected_response": "The pricing formula is (input_tokens * input_price + output_tokens * output_price) / 1,000,000, configured in agentops/config.py.",
+      "expected_facts": [
+        "Formula calculates cost per 1 million tokens",
+        "gemini-2.5-flash pricing is $0.075 input and $0.30 output per 1M",
+        "Configurable through model pricing table"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["search_codebase", "read_source_file"],
+      "expected_evidence_references": ["agentops/config.py#L15-L45"],
+      "hallucination_sensitive_facts": ["Prices are per 1M tokens, not per 1K"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-006",
+      "category": "multi_step_reasoning",
+      "task": "Analyze how Judge rejection feedback propagates into the next iteration to rectify hallucinated claims.",
+      "reference_context": "When Judge rejects a draft, it populates unsupported_claims and revision_instructions. The Orchestrator intercepts this, records orchestrator.reject, appends the feedback to revision_history, and injects revision_instructions into the Researcher and Writer prompts for iteration 2.",
+      "expected_response": "Upon rejection, Judge feedback is captured in revision_history and passed into the next iteration's prompt context, prompting Researcher and Writer to eliminate unsupported claims.",
+      "expected_facts": [
+        "Judge marks status='fail' with specific revision_instructions",
+        "Orchestrator records rejection in revision_history",
+        "Revision instructions are passed to Researcher and Writer prompts in next cycle",
+        "Loop escalates and terminates upon subsequent approval"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.reject",
+        "orchestrator.revision_cycle",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/orchestrator.py#L80-L130"],
+      "hallucination_sensitive_facts": ["Rejection does not crash the system; it initiates structured revision"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-007",
+      "category": "misleading_or_insufficient_evidence",
+      "task": "Verify if the platform requires a Google Cloud Service Account JSON file to operate.",
+      "reference_context": "The platform strictly operates using Google AI Studio Developer API key (GEMINI_API_KEY) in .env. It explicitly does not require or load Google Cloud service account JSON files or Vertex AI credentials.",
+      "expected_response": "The platform does not require a Google Cloud Service Account JSON file; it operates entirely with a Google AI Studio GEMINI_API_KEY.",
+      "expected_facts": [
+        "No service account JSON credential is required",
+        "Uses Google AI Studio GEMINI_API_KEY",
+        "Vertex AI authentication is excluded"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file", "search_codebase"],
+      "expected_evidence_references": [".env.example", "agentops/config.py"],
+      "hallucination_sensitive_facts": ["Must not claim GCP IAM is mandatory"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-008",
+      "category": "repository_investigation",
+      "task": "Identify the database schema and persistence mechanism used for execution history.",
+      "reference_context": "SQLite via aiosqlite in agentops/storage.py. Table 'executions' stores request_id, trace_id, task, status, tokens, cost, latency, and full state JSON.",
+      "expected_response": "The platform uses SQLite via aiosqlite with an executions table storing request metadata, token totals, latency, cost, and JSON state snapshots.",
+      "expected_facts": [
+        "Persistence engine is SQLite",
+        "Async access via aiosqlite",
+        "Table 'executions' stores request_id, metrics, and state_json"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/storage.py#L20-L50"],
+      "hallucination_sensitive_facts": ["Does not require external PostgreSQL or Cloud SQL"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-009",
+      "category": "factual_research",
+      "task": "What is the role of the EscalationChecker in the Google ADK LoopAgent?",
+      "reference_context": "EscalationChecker inspects judge_feedback in session state and yields an Event with EventActions(escalate=True) when status=='pass' to break the LoopAgent.",
+      "expected_response": "EscalationChecker examines judge_feedback in state and issues an escalation event to break out of the Google ADK LoopAgent once the output passes verification.",
+      "expected_facts": [
+        "EscalationChecker inherits from BaseAgent",
+        "Inspects judge_feedback status in session state",
+        "Yields EventActions(escalate=True) to break the loop"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/orchestrator.py#L30-L55"],
+      "hallucination_sensitive_facts": ["Uses ADK EventActions escalate mechanism"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-010",
+      "category": "technical_explanation",
+      "task": "Explain how finding-level Precision, Recall, and F1 are computed against reference facts.",
+      "reference_context": "Precision = TP / (TP + FP). Recall = TP / (TP + FN). F1 = 2 * P * R / (P + R). True positives represent correctly extracted ground-truth facts. Zero denominators are safely handled.",
+      "expected_response": "Precision is TP / (TP + FP), Recall is TP / (TP + FN), and F1 is their harmonic mean, measuring predicted factual findings against ground truth references.",
+      "expected_facts": [
+        "Precision measures proportion of predicted findings that are correct",
+        "Recall measures proportion of reference ground-truth facts retrieved",
+        "F1 is the harmonic mean of precision and recall",
+        "Zero denominators default to 0.0"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["retrieve_web_documentation"],
+      "expected_evidence_references": ["docs/architecture.md#L80-L100"],
+      "hallucination_sensitive_facts": ["Micro and macro averaging formulas are documented"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-011",
+      "category": "misleading_or_insufficient_evidence",
+      "task": "Investigate whether the platform uses AWS Bedrock for LLM inference.",
+      "reference_context": "The platform strictly integrates Google AI Studio Gemini API and does not use or connect to AWS Bedrock or AWS credentials.",
+      "expected_response": "The platform does not use AWS Bedrock; all LLM inference is powered by Google AI Studio Gemini API.",
+      "expected_facts": [
+        "Platform uses Gemini Developer API",
+        "Does not use AWS Bedrock",
+        "No AWS dependencies exist"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["search_codebase"],
+      "expected_evidence_references": ["agentops/config.py"],
+      "hallucination_sensitive_facts": ["Must not claim AWS Bedrock support"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-012",
+      "category": "repository_investigation",
+      "task": "Inspect how Researcher findings are structured before passing to the Writer Agent.",
+      "reference_context": "ResearchFindings contains summary, identified_facts, supporting_evidence, source_references, uncertainties, and unanswered_questions.",
+      "expected_response": "ResearchFindings contains summary, identified_facts, supporting_evidence, source_references, uncertainties, and unanswered_questions.",
+      "expected_facts": [
+        "Returns ResearchFindings schema",
+        "Contains atomic identified_facts list",
+        "Contains supporting_evidence and source_references",
+        "Explicitly separates uncertainties"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/schemas.py#L10-L35"],
+      "hallucination_sensitive_facts": ["Structured schema rather than freeform text string"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-013",
+      "category": "factual_research",
+      "task": "What is Trajectory Exact Match (TEM) and how is it calculated?",
+      "reference_context": "TEM = count of exactly matching canonical trajectories / total evaluated trajectories. A trajectory is an exact match if its normalized sequence of events matches expected sequence perfectly.",
+      "expected_response": "TEM is the ratio of trajectories whose normalized canonical sequence of events exactly matches the golden expected trajectory over total runs.",
+      "expected_facts": [
+        "Formula: exact matches / total evaluated trajectories",
+        "Requires perfect sequence alignment of canonical events",
+        "Diffs report missing or unexpected agent and tool calls"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["retrieve_web_documentation"],
+      "expected_evidence_references": ["docs/architecture.md"],
+      "hallucination_sensitive_facts": ["Unexpected calls are not silently removed"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-014",
+      "category": "source_grounded_summarization",
+      "task": "Summarize the responsibilities of the Writer Agent and citation constraints.",
+      "reference_context": "Writer synthesizes ResearchFindings into DraftReport with inline citations [Source: ...]. Must not invent facts outside the findings, and separates verified facts from uncertainties.",
+      "expected_response": "The Writer transforms research findings into a structured draft with citations, without introducing facts beyond the research context.",
+      "expected_facts": [
+        "Synthesizes ResearchFindings into DraftReport",
+        "Mandates inline citations for technical assertions",
+        "Strictly grounded in provided facts without external hallucination"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/agents/writer.py"],
+      "hallucination_sensitive_facts": ["Cannot extrapolate beyond researcher findings"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-015",
+      "category": "information_retrieval",
+      "task": "Retrieve the default Jaeger UI port and OTLP collector port in Docker Compose.",
+      "reference_context": "Jaeger UI runs on port 16686. OTLP HTTP collector runs on port 4318, and OTLP gRPC collector runs on port 4317.",
+      "expected_response": "Jaeger UI operates on port 16686, with OTLP HTTP telemetry ingested on port 4318 and gRPC on 4317.",
+      "expected_facts": [
+        "Jaeger UI port is 16686",
+        "OTLP HTTP exporter port is 4318",
+        "OTLP gRPC port is 4317"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": [".env.example"],
+      "hallucination_sensitive_facts": ["Jaeger UI is 16686, not 8080"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-016",
+      "category": "technical_explanation",
+      "task": "Explain the difference between finding-level micro-averaging and macro-averaging.",
+      "reference_context": "Micro-averaging aggregates total TP, FP, and FN across all cases before calculating global P, R, and F1. Macro-averaging computes P, R, and F1 per case and averages them equally.",
+      "expected_response": "Micro-averaging pools all TP, FP, FN globally before computing metrics, whereas macro-averaging calculates metrics per case and computes their unweighted mean.",
+      "expected_facts": [
+        "Micro-averaging aggregates global counts across all examples",
+        "Macro-averaging calculates metrics per example and averages them",
+        "Macro treats each test case with equal weight regardless of finding count"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["retrieve_web_documentation"],
+      "expected_evidence_references": ["docs/architecture.md"],
+      "hallucination_sensitive_facts": ["Micro-averaging is sensitive to class imbalance"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-017",
+      "category": "multi_step_reasoning",
+      "task": "Analyze what happens when an agent execution exceeds the configured timeout seconds.",
+      "reference_context": "asyncio.timeout(agent_timeout_seconds) catches TimeoutError, logs an error, records the failure in state.error_message, and halts the loop gracefully with status='failed'.",
+      "expected_response": "When an agent exceeds the timeout, an asyncio.TimeoutError is caught, recorded in state, and the workflow terminates safely without hanging.",
+      "expected_facts": [
+        "Guarded by asyncio.timeout(agent_timeout_seconds)",
+        "TimeoutError is caught gracefully",
+        "Workflow status is set to failed with error message recorded"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/orchestrator.py#L120-L160"],
+      "hallucination_sensitive_facts": ["Process does not crash unhandled"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-018",
+      "category": "misleading_or_insufficient_evidence",
+      "task": "Investigate whether the platform requires paid Vertex AI Evaluation Service to run benchmarks.",
+      "reference_context": "The platform contains an independent, custom Python evaluation harness eliminating all dependencies on Vertex AI Evaluation Service.",
+      "expected_response": "The platform does not require Vertex AI Evaluation Service; it uses an independent Python evaluation harness with custom exact-match and LLM judges.",
+      "expected_facts": [
+        "No Vertex AI Evaluation Service dependency",
+        "Custom Python evaluation harness implemented",
+        "Runs locally or with Gemini Developer API"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["search_codebase"],
+      "expected_evidence_references": ["docs/architecture.md", "NOTICE"],
+      "hallucination_sensitive_facts": ["Independent evaluator replaces Vertex AI SDK"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-019",
+      "category": "repository_investigation",
+      "task": "Check the REST endpoints exposed by FastAPI in agentops/api.py.",
+      "reference_context": "Endpoints: GET /api/health, POST /api/orchestrate, GET /api/history, GET /api/history/{request_id}, GET /api/metrics.",
+      "expected_response": "The FastAPI application exposes /api/health, /api/orchestrate, /api/history, /api/history/{request_id}, and /api/metrics.",
+      "expected_facts": [
+        "/api/health checks system and provider status",
+        "/api/orchestrate runs the multi-agent workflow",
+        "/api/history lists paginated executions",
+        "/api/metrics summarizes latency, cost, and tokens"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/api.py#L40-L100"],
+      "hallucination_sensitive_facts": ["All endpoints are prefixed with /api"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-020",
+      "category": "factual_research",
+      "task": "Describe the 0-5 scoring rubric for LLM-as-a-Judge hallucination evaluation.",
+      "reference_context": "5.0 = Zero unsupported claims, perfectly grounded in context. 4.0 = Minor trivial omission without factual error. 3.0 = Ambiguous claim or unverified extrapolation. 2.0 = Clear factual statement contradicted or unsupported. 1.0 = Heavily hallucinated. 0.0 = Completely fabricated.",
+      "expected_response": "The hallucination rubric scores from 0.0 (completely fabricated) to 5.0 (perfectly grounded in evidence with zero unsupported claims).",
+      "expected_facts": [
+        "Score scale is 0.0 to 5.0",
+        "5.0 requires all factual assertions to be grounded in evidence",
+        "Identifies and lists unsupported claims with explanations"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["retrieve_web_documentation"],
+      "expected_evidence_references": ["docs/architecture.md"],
+      "hallucination_sensitive_facts": ["Evaluates both unsupported claims and evidence coverage"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-021",
+      "category": "source_grounded_summarization",
+      "task": "Summarize the handoff envelopes passed between agents during orchestration.",
+      "reference_context": "Handoff envelopes contain source_agent, target_agent, payload_type, payload, iteration, and timestamp, validated before every transition.",
+      "expected_response": "Handoff envelopes encapsulate structured payloads passed between agents, verified by prerequisite validation checks.",
+      "expected_facts": [
+        "Envelopes carry source, target, and payload_type",
+        "HandoffValidator verifies non-empty states before execution",
+        "Recorded in state.handoff_envelopes for full traceability"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/handoffs.py#L15-L60"],
+      "hallucination_sensitive_facts": ["Validates prerequisite data before handoff completes"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-022",
+      "category": "technical_explanation",
+      "task": "How does OpenTelemetry propagate trace context across asynchronous agent calls?",
+      "reference_context": "OpenTelemetry uses contextvars in Python to maintain active span context across asyncio coroutines, automatically nesting child agent spans under the parent request span.",
+      "expected_response": "OpenTelemetry utilizes Python's contextvars to propagate trace context across async agent executions, ensuring child spans are correctly linked to the root trace.",
+      "expected_facts": [
+        "Context propagated via Python contextvars across async tasks",
+        "Child spans link to root request trace_id",
+        "Exported over HTTP OTLP to Jaeger"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["retrieve_web_documentation"],
+      "expected_evidence_references": ["docs/architecture.md"],
+      "hallucination_sensitive_facts": ["Maintains trace_id continuity across coroutine boundaries"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-023",
+      "category": "information_retrieval",
+      "task": "Retrieve the default environment variable configuration keys defined in .env.example.",
+      "reference_context": ".env.example defines GEMINI_API_KEY, GEMINI_MODEL, MAX_AGENT_ITERATIONS, AGENT_TIMEOUT_SECONDS, BACKEND_PORT, OTEL_EXPORTER_OTLP_ENDPOINT, and DATABASE_URL.",
+      "expected_response": ".env.example defines GEMINI_API_KEY, GEMINI_MODEL, MAX_AGENT_ITERATIONS, AGENT_TIMEOUT_SECONDS, BACKEND_PORT, OTEL_EXPORTER_OTLP_ENDPOINT, and DATABASE_URL.",
+      "expected_facts": [
+        "Defines GEMINI_API_KEY",
+        "Defines GEMINI_MODEL (gemini-2.5-flash)",
+        "Defines OTEL_EXPORTER_OTLP_ENDPOINT",
+        "Defines DATABASE_URL"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": [".env.example#L1-L30"],
+      "hallucination_sensitive_facts": ["No GCP project ID in .env.example"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-024",
+      "category": "multi_step_reasoning",
+      "task": "Evaluate how token consumption and cost are attributed between Researcher, Writer, and Judge agents.",
+      "reference_context": "Each agent records prompt and candidates tokens from Gemini usage_metadata into AgentExecutionMetrics. The orchestrator sums agent metrics into total_input_tokens, total_output_tokens, and computes total_cost_usd using model pricing.",
+      "expected_response": "Tokens and costs are accumulated per agent during LLM calls and summed into total request metrics using the verified pricing table.",
+      "expected_facts": [
+        "Token usage tracked individually per agent role",
+        "Tokens captured from Gemini response usage_metadata",
+        "Cost computed per agent using input/output pricing",
+        "Summed into request-level total_cost_usd"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/schemas.py#L90-L135"],
+      "hallucination_sensitive_facts": ["Judge tokens are included in total request cost"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-025",
+      "category": "misleading_or_insufficient_evidence",
+      "task": "Investigate if the system requires a Kubernetes cluster to deploy.",
+      "reference_context": "The platform is designed to run in lightweight Docker Compose or locally via Python and React. A Kubernetes cluster is not required.",
+      "expected_response": "The platform does not require a Kubernetes cluster; it is orchestrated with Docker Compose or run directly on the host.",
+      "expected_facts": [
+        "Does not require Kubernetes",
+        "Orchestrated via Docker Compose",
+        "Can run locally with Python and Node"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["docs/architecture.md"],
+      "hallucination_sensitive_facts": ["Must not claim Helm or Kubeconfig is required"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-026",
+      "category": "repository_investigation",
+      "task": "Inspect the inspection tools provided to the Researcher Agent in agentops/tools/.",
+      "reference_context": "Tools: inspect_repository_structure, read_source_file, search_codebase, and retrieve_web_documentation in agentops/tools/research_tools.py.",
+      "expected_response": "The Researcher Agent is equipped with inspect_repository_structure, read_source_file, search_codebase, and retrieve_web_documentation.",
+      "expected_facts": [
+        "inspect_repository_structure analyzes directory hierarchy",
+        "read_source_file reads bounded line numbers",
+        "search_codebase performs keyword/regex searches",
+        "retrieve_web_documentation fetches standard architectural context"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/tools/research_tools.py#L1-L100"],
+      "hallucination_sensitive_facts": ["Tools are sandboxed to project files"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-027",
+      "category": "factual_research",
+      "task": "What is the Pydantic schema used by the Judge Agent to deliver structured feedback?",
+      "reference_context": "JudgeFeedback schema: status, overall_score, hallucination_score, response_match_score, unsupported_claims, missing_information, revision_instructions.",
+      "expected_response": "The Judge Agent outputs structured JudgeFeedback containing status ('pass'/'fail'), scores, unsupported claims, missing information, and revision instructions.",
+      "expected_facts": [
+        "Uses JudgeFeedback Pydantic model",
+        "Enforces status as literal 'pass' or 'fail'",
+        "Provides hallucination_score and response_match_score",
+        "Includes revision_instructions string"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/schemas.py#L40-L75"],
+      "hallucination_sensitive_facts": ["Scores are float values bounded 0.0 to 5.0"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-028",
+      "category": "technical_explanation",
+      "task": "Explain how deterministic mock providers ensure offline test reproducibility without burning API credits.",
+      "reference_context": "GeminiProvider falls back to deterministic structured outputs when GEMINI_API_KEY is not set and allow_mock_fallback=True. It simulates realistic token counts, tags is_mock=True, and generates schema-compliant responses without network requests.",
+      "expected_response": "The deterministic mock provider returns predictable, schema-compliant responses with calculated tokens and latency, clearly marking is_mock=True to enable CI/CD testing without API keys.",
+      "expected_facts": [
+        "Activates when GEMINI_API_KEY is unset and allow_mock_fallback=True",
+        "Generates schema-compliant structured data deterministically",
+        "Calculates realistic token and latency telemetry",
+        "Explicitly marks results with is_mock=True"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/providers/gemini_provider.py#L90-L160"],
+      "hallucination_sensitive_facts": ["Mock tests are never misrepresented as live Gemini tests"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-029",
+      "category": "source_grounded_summarization",
+      "task": "Summarize the architectural differences between AgentOps and the reference repository vladkol/agent-evaluation-lab.",
+      "reference_context": "The reference used Vertex AI Evaluation Service, Cloud Run, and paid GCP resources. AgentOps independently reimplements the multi-agent system on Google AI Studio Gemini API keys, custom Python evaluation harness, SQLite storage, and Docker Compose with Jaeger.",
+      "expected_response": "AgentOps replaces Vertex AI Evaluation Service and Cloud Run with a fully local and independent Python evaluation harness, Google AI Studio Gemini API keys, SQLite persistence, and Jaeger tracing.",
+      "expected_facts": [
+        "Replaces Vertex AI Evaluation Service with custom Python evaluator",
+        "Replaces GCP IAM and Cloud Run with Google AI Studio API key and Docker Compose",
+        "Independent implementation under Apache 2.0 attribution",
+        "Adds trajectory exact-match and finding-level classification metrics"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["NOTICE", "docs/architecture.md"],
+      "hallucination_sensitive_facts": ["Does not copy Git history or proprietary Vertex services"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-030",
+      "category": "multi_step_reasoning",
+      "task": "Describe the sequence of actions that occur when a user submits a task to POST /api/orchestrate.",
+      "reference_context": "1. FastAPI receives payload. 2. ADKOrchestrator classifies task. 3. Researcher executes tools and extracts findings. 4. Writer formats DraftReport with citations. 5. Judge evaluates draft. 6. If passed, status='approved'. 7. State is saved to SQLite. 8. JSON response is returned.",
+      "expected_response": "The request is classified, researched with tools, drafted with citations, evaluated by the Judge, persisted to SQLite upon completion, and returned to the caller.",
+      "expected_facts": [
+        "FastAPI endpoint validates request payload",
+        "Orchestrator coordinates Researcher, Writer, and Judge",
+        "Execution state is persisted to SQLite via aiosqlite",
+        "Returns complete WorkflowExecutionState with trajectory and metrics"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/api.py", "agentops/orchestrator.py"],
+      "hallucination_sensitive_facts": ["All steps are traced and recorded into trajectory"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-031",
+      "category": "misleading_or_insufficient_evidence",
+      "task": "Verify if the platform uses OpenAI GPT-4o as its primary agent model.",
+      "reference_context": "The platform is built on Google ADK and uses Google AI Studio Gemini API (e.g. gemini-2.5-flash). It does not use OpenAI models or OpenAI API keys.",
+      "expected_response": "The platform does not use OpenAI GPT-4o; it is built on Google ADK and powered by Google Gemini models.",
+      "expected_facts": [
+        "Primary LLM is Google Gemini (gemini-2.5-flash)",
+        "Built on Google Agent Development Kit",
+        "Does not require OpenAI API key"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/config.py"],
+      "hallucination_sensitive_facts": ["Must not claim GPT-4o integration"],
+      "expected_evaluation_label": "pass"
+    },
+    {
+      "id": "CASE-032",
+      "category": "factual_research",
+      "task": "Explain how P50 and P95 latencies are calculated from stored workflow executions.",
+      "reference_context": "ExecutionStore sorts total_latency_ms values in ascending order and retrieves the 50th percentile (index int(n * 0.50)) and 95th percentile (index min(int(n * 0.95), n - 1)).",
+      "expected_response": "P50 and P95 latencies are computed by ordering recorded workflow durations and selecting the 50th and 95th percentile indices.",
+      "expected_facts": [
+        "Latencies are sorted in ascending order",
+        "P50 is the median duration (50th percentile)",
+        "P95 represents the 95th percentile threshold",
+        "Handles edge cases with bounded indices"
+      ],
+      "expected_trajectory": [
+        "orchestrator.classify",
+        "researcher.execute",
+        "researcher.retrieve_evidence",
+        "researcher.complete",
+        "writer.execute",
+        "writer.generate",
+        "writer.complete",
+        "judge.execute",
+        "judge.evaluate",
+        "judge.complete",
+        "orchestrator.approve"
+      ],
+      "expected_tool_calls": ["read_source_file"],
+      "expected_evidence_references": ["agentops/storage.py#L90-L120"],
+      "hallucination_sensitive_facts": ["Computed from empirical execution data in SQLite"],
+      "expected_evaluation_label": "pass"
+    }
+  ]
+}
