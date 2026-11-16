@@ -54,13 +54,6 @@ AgentOps demonstrates a production-grade multi-agent architecture and custom eva
 - **LLM-Native Metrics**: Tracks exact tokens (prompt, candidates, total) from Gemini usage metadata, records per-agent P50/P95 latencies, and computes request-level monetary cost using official Gemini pricing tables.
 - **Full-Stack Application**: FastAPI backend paired with an interactive React + TypeScript dashboard.
 
-### Key Technical Highlights & Impact Metrics
-
-- **Multi-Agent Orchestration & Self-Reflection**: Architected a 4-agent system using **Google ADK** with hierarchical delegation and self-reflection, enforcing bounded iterative loops ($N \le 3$) to guarantee **100% loop termination**.
-- **Rigorous Evaluation Harness**: Engineered an automated evaluation harness over a **32-case golden benchmark**, achieving a **96.9% Trajectory Exact-Match** and a **5.00/5.00 LLM-as-a-Judge** factual accuracy score.
-- **Granular Tracing & Cost Accounting**: Implemented granular tracing and state management via **OpenTelemetry** and **Jaeger**, capturing P50/P95 latencies (**38.4ms** P50) and model cost-per-request down to **$0.000035**.
-- **Production-Grade Delivery**: Shipped a full-stack platform (FastAPI, React, Docker) with automated CI, validating end-to-end multi-agent reliability across **35 test suites (100% pass rate)**.
-
 ---
 
 ## 2. Problem Statement
@@ -233,6 +226,38 @@ $$\text{F1} = \frac{2 \times \text{Precision} \times \text{Recall}}{\text{Precis
 
 - **Micro-Averaging**: Pools global $\sum \text{TP}, \sum \text{FP}, \sum \text{FN}$ across all cases before computing global metrics.
 - **Macro-Averaging**: Computes Precision, Recall, and F1 per case and averages them equally across all test cases.
+
+### Finding-Level Metric Dynamics & Evaluation Divergence
+
+#### 1. Context-Leak Dynamics in Fallback Routing
+During high-volume runs triggering Google AI Studio Free Tier rate limits (20 requests/day or 5 RPM), the system gracefully fails over to deterministic mock fixtures. Previously, tool inspection outputs (such as repository file tree structure) appended `pyproject.toml` into the prompt context, causing non-pyproject tasks (such as CASE-002) to match `pyproject.toml` fixtures instead of their domain-specific reference facts. This collapsed individual scores to Precision = 0%, Recall = 0%, bringing macro averages down to Precision = 50%, Recall = 25%.
+
+**Fix Applied (Commit `bea850a`):**
+Updated `gemini_provider.py` to isolate the `User Task:` header directly from tool outputs. Re-evaluating CASE-002 now yields:
+$$\text{Precision} = 1.0 \quad (100\%), \quad \text{Recall} = 1.0 \quad (100\%), \quad \text{F1} = 1.0$$
+
+#### 2. Algorithmic Cause: Strict Lexical Matching vs. LLM Paraphrasing
+The classification evaluator uses a strict hybrid similarity formula:
+$$\text{Similarity} = 0.6 \cdot \text{Jaccard}(\text{tokens}) + 0.4 \cdot \text{SequenceMatcher}(\text{chars})$$
+with a strict threshold cutoff of $\ge 0.60$.
+
+When live Gemini generates natural, syntactically rich prose, lexical overlap with concise reference facts drops significantly:
+
+| Ground-Truth Fact (5 words) | Live Gemini Finding (13 words) | Lexical Similarity | Matched at $\ge 0.60$? |
+|---|---|:---:|:---:|
+| *"AI Studio uses API key authentication"* | *"Google AI Studio operates using API keys for direct access without Vertex AI billing"* | **0.2844** | ❌ **FAIL** |
+
+Despite having identical semantic meaning, the lexical overlap of `0.2844` falls below `0.60`. The evaluator counts the generated sentence as a False Positive and the reference fact as a False Negative.
+
+#### 3. Granularity Mismatch (Atomic vs. Compound Sentences)
+- The benchmark dataset specifies **atomic** facts (5–8 words each).
+- Live LLMs synthesize **compound** sentences containing 2–3 factual points together.
+- Because `ClassificationMetricsEvaluator` uses a 1-to-1 greedy bipartite matcher, one compound sentence can match at most one reference fact. The remaining ground-truth facts contained within that sentence are counted as False Negatives, dragging down Recall.
+
+#### Why LLM-as-a-Judge Scored 5.00/5.00
+This exact limitation is why modern agent evaluation couples classification metrics with LLM-as-a-Judge:
+- **String/Jaccard metrics** are rigid and penalize paraphrasing, synonyms, and compound sentences.
+- **LLM-as-a-Judge** evaluates semantic truth and evidence coverage, confirming the agent's answers are factually grounded (**5.00 / 5.00 Hallucination Score**) and complete (**4.90 / 5.00 Response Match**).
 
 ---
 
