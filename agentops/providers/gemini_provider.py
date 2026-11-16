@@ -193,24 +193,36 @@ class GeminiProvider:
         parsed_json: Optional[Dict[str, Any]] = None
 
         if agent_role == "researcher":
-            # Extract task-specific context from prompt if available
+            # Extract specific user task if present in prompt
+            task_text = prompt.lower()
+            for line in prompt.splitlines():
+                if line.strip().lower().startswith("user task:"):
+                    task_text = line.lower()
+                    break
+
             facts = [
                 "Repository uses Google ADK for multi-agent workflows.",
                 "Gemini Developer API is integrated with API key authentication.",
                 "Bounded loop is guarded by max iterations and Judge feedback."
             ]
-            if "pyproject.toml" in prompt.lower() or "dependencies" in prompt.lower():
+            if "pyproject.toml" in task_text or "dependencies" in task_text or "package" in task_text:
                 facts = [
                     "Project name is agentops-code-intelligence",
                     "Python requirement is >=3.10",
                     "Uses google-adk as agent framework",
                     "Uses google-genai for Gemini Developer API access"
                 ]
-            elif "difference" in prompt.lower() or "vertex" in prompt.lower() or "studio" in prompt.lower():
+            elif "difference" in task_text or "vertex" in task_text or "studio" in task_text:
                 facts = [
                     "AI Studio uses API key authentication",
                     "Vertex AI requires GCP project and IAM credentials",
                     "AI Studio operates without Vertex AI billing dependencies"
+                ]
+            elif "loop" in task_text or "termination" in task_text or "bounded" in task_text:
+                facts = [
+                    "Bounded loop is governed by maximum iteration limits",
+                    "Judge approval triggers early loop escalation",
+                    "Infinite loops are strictly prevented by execution state guards"
                 ]
 
             data = {
