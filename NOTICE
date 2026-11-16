@@ -1,0 +1,13 @@
+AgentOps: Multi-Agent Research, Evaluation and Observability Platform
+Copyright 2026 Harsh Sharma
+
+This product includes software and architectural concepts derived from or inspired by:
+- agent-evaluation-lab (https://github.com/vladkol/agent-evaluation-lab)
+  Copyright 2025 Google LLC (Licensed under Apache License 2.0)
+
+Independent Implementations:
+1. Google AI Studio Gemini API provider without Google Cloud / Vertex AI dependencies.
+2. Custom multi-metric evaluation harness replacing Google Cloud Evaluation Service.
+3. OpenTelemetry and Jaeger local tracing integration with LLM-native token and cost metrics.
+4. FastAPI backend and React TypeScript web dashboard.
+5. Independent golden benchmark dataset and trajectory exact-match comparator.
