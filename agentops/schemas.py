@@ -120,6 +120,7 @@ class WorkflowExecutionState(BaseModel):
     draft_report: Optional[DraftReport] = None
     judge_feedback: Optional[JudgeFeedback] = None
     revision_history: List[Dict[str, Any]] = Field(default_factory=list)
+    handoff_envelopes: List[Dict[str, Any]] = Field(default_factory=list)
     trajectory: List[AgentTrajectoryStep] = Field(default_factory=list)
     agent_metrics: Dict[str, AgentExecutionMetrics] = Field(default_factory=dict)
     total_input_tokens: int = 0

@@ -18,6 +18,7 @@ from agentops.providers.gemini_provider import GeminiProvider
 from agentops.agents.researcher import ResearcherAgent
 from agentops.agents.writer import WriterAgent
 from agentops.agents.judge import JudgeAgent
+from agentops.handoffs import HandoffTracker, HandoffValidator
 from agentops.schemas import (
     WorkflowExecutionState,
     ResearchFindings,
@@ -151,6 +152,7 @@ class ADKOrchestrator:
         )
         classification = self.classify_task(task)
 
+        handoff_tracker = HandoffTracker()
         revision_instructions: Optional[str] = None
         current_iteration = 1
         approved = False
@@ -162,14 +164,32 @@ class ADKOrchestrator:
             try:
                 # Wrap each iteration in timeout guard
                 async with asyncio.timeout(self.settings.agent_timeout_seconds):
-                    # Step A: Researcher Agent
+                    # Step A: Researcher Agent Handoff & Execution
+                    HandoffValidator.validate_orchestrator_to_researcher(task)
+                    handoff_tracker.record(
+                        source="orchestrator",
+                        target="researcher",
+                        payload_type="task",
+                        payload={"task": task, "revision_instructions": revision_instructions},
+                        iteration=current_iteration,
+                    )
+
                     findings = await self.researcher.execute(
                         task=task,
                         state=state,
                         revision_instructions=revision_instructions,
                     )
 
-                    # Step B: Writer Agent
+                    # Step B: Writer Agent Handoff & Execution
+                    HandoffValidator.validate_researcher_to_writer(findings)
+                    handoff_tracker.record(
+                        source="researcher",
+                        target="writer",
+                        payload_type="research_findings",
+                        payload=findings.model_dump(),
+                        iteration=current_iteration,
+                    )
+
                     draft = await self.writer.execute(
                         task=task,
                         research_findings=findings,
@@ -177,7 +197,16 @@ class ADKOrchestrator:
                         revision_instructions=revision_instructions,
                     )
 
-                    # Step C: Judge Agent
+                    # Step C: Judge Agent Handoff & Execution
+                    HandoffValidator.validate_writer_to_judge(findings, draft)
+                    handoff_tracker.record(
+                        source="writer",
+                        target="judge",
+                        payload_type="draft_report",
+                        payload=draft.model_dump(),
+                        iteration=current_iteration,
+                    )
+
                     feedback = await self.judge.execute(
                         task=task,
                         research_findings=findings,
@@ -270,6 +299,7 @@ class ADKOrchestrator:
 
         total_elapsed = (time.perf_counter() - start_time) * 1000.0
         state.total_latency_ms = round(total_elapsed, 2)
+        state.handoff_envelopes = [e.model_dump() for e in handoff_tracker.envelopes]
         from datetime import datetime, timezone
         state.completed_at = datetime.now(timezone.utc).isoformat()
 
